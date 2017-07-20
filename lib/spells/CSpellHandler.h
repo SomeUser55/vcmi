@@ -310,12 +310,6 @@ public:
 	bool adventureCast(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const;
 	void battleCast(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters) const;
 
-public:
-	///Client-server logic. Has direct write access to GameState.
-	///Shall be called (only) when applying packets on BOTH SIDES
-
-	///implementation of BattleSpellCast applying
-	void applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const;
 public://internal, for use only by Mechanics classes
 	///applies caster`s secondary skills and affectedCreature`s to raw damage
 	int adjustRawDamage(const ISpellCaster * caster, const CStack * affectedCreature, int rawDamage) const;

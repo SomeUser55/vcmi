@@ -1528,11 +1528,13 @@ DLL_LINKAGE void BattleSpellCast::applyGs(CGameState *gs)
 {
 	assert(gs->curB);
 
-	const CSpell * spell = SpellID(id).toSpell();
-
-	assert(spell);
-
-	spell->applyBattle(gs->curB, this);
+	if(castByHero)
+	{
+		if(side < 2)
+		{
+			gs->curB->sides[side].castSpellsCount++;
+		}
+	}
 }
 
 void actualizeEffect(CStack * s, const Bonus & ef)
