@@ -801,7 +801,7 @@ void DefaultSpellMechanics::doRemoveEffects(const SpellCastEnvironment * env, Sp
 
 void DefaultSpellMechanics::handleCounteringSpells(const SpellCastEnvironment * env, SpellCastContext & ctx) const
 {
-	doRemoveEffects(env, ctx, std::bind(&counteringSelector, this, _1));
+	doRemoveEffects(env, ctx, std::bind(&DefaultSpellMechanics::counteringSelector, this, _1));
 }
 
 void DefaultSpellMechanics::handleMagicMirror(const SpellCastEnvironment * env, SpellCastContext & ctx, std::vector <const CStack*> & reflected) const
