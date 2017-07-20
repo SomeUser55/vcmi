@@ -64,7 +64,7 @@ struct DLL_LINKAGE SpellCreatedObstacle : CObstacleInstance
 	si32 casterSpellPower;
 	si8 spellLevel;
 	si8 casterSide; //0 - obstacle created by attacker; 1 - by defender
-	si8 visibleForAnotherSide;
+	bool visibleForAnotherSide;
 
 	std::vector<BattleHex> customSize;
 

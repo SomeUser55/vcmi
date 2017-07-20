@@ -510,7 +510,7 @@ void ObstacleMechanics::placeObstacle(const SpellCastEnvironment * env, const Ba
 	obstacle->spellLevel = parameters.effectLevel;
 	obstacle->casterSpellPower = parameters.effectPower;
 	obstacle->uniqueID = obstacleIdToGive;
-
+	obstacle->customSize = std::vector<BattleHex>(1, pos);
 	setupObstacle(obstacle.get());
 
 	BattleObstaclePlaced bop;
