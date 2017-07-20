@@ -12,7 +12,6 @@
 #include "../CHeroHandler.h"
 #include "../CTownHandler.h"
 #include "../VCMI_Lib.h"
-#include "../spells/CSpellHandler.h"
 
 CObstacleInstance::CObstacleInstance()
 {
@@ -128,7 +127,7 @@ std::vector<BattleHex> SpellCreatedObstacle::getAffectedTiles() const
 	case FIRE_WALL:
 		return std::vector<BattleHex>(1, pos);
 	case FORCE_FIELD:
-		return SpellID(SpellID::FORCE_FIELD).toSpell()->rangeInHexes(pos, spellLevel, casterSide);
+		return customSize;
 	default:
 		assert(0);
 		return std::vector<BattleHex>();

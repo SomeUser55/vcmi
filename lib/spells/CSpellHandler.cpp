@@ -232,10 +232,15 @@ ESpellCastProblem::ESpellCastProblem CSpell::canBeCast(const CBattleInfoCallback
 	return ESpellCastProblem::OK;
 }
 
-std::vector<BattleHex> CSpell::rangeInHexes(BattleHex centralHex, ui8 schoolLvl, ui8 side, bool *outDroppedHexes) const
+std::vector<BattleHex> CSpell::rangeInHexes(const CBattleInfoCallback * cb, const ISpellCaster * caster, BattleHex centralHex) const
 {
-	//FIXME: CBattleInfoCallback parameter for rangeInHexes
-	return battleMechanics(nullptr)->rangeInHexes(centralHex,schoolLvl,side,outDroppedHexes);
+    auto side = cb->playerToSide(caster->getOwner());
+    if(!side)
+		return std::vector<BattleHex>(1,centralHex);
+
+	auto schoolLevel = caster->getSpellSchoolLevel(this);
+
+	return battleMechanics(cb)->rangeInHexes(centralHex, schoolLevel, side.get());
 }
 
 std::vector<const CStack *> CSpell::getAffectedStacks(const CBattleInfoCallback * cb, ECastingMode::ECastingMode mode, const ISpellCaster * caster, int spellLvl, BattleHex destination) const

@@ -3112,11 +3112,8 @@ void CBattleInterface::showHighlightedHexes(SDL_Surface *to)
 
 				if(caster && spell) //when casting spell
 				{
-					//calculating spell school level
-					ui8 schoolLevel = caster->getSpellSchoolLevel(spell);
-
 					// printing shaded hex(es)
-					auto shaded = spell->rangeInHexes(currentlyHoveredHex, schoolLevel, curInt->cb->battleGetMySide());
+					auto shaded = spell->rangeInHexes(curInt->cb.get(), caster, currentlyHoveredHex);
 					for(BattleHex shadedHex : shaded)
 					{
 						if((shadedHex.getX() != 0) && (shadedHex.getX() != GameConstants::BFIELD_WIDTH - 1))

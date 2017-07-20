@@ -504,14 +504,14 @@ void ObstacleMechanics::placeObstacle(const SpellCastEnvironment * env, const Ba
 	const int obstacleIdToGive = parameters.cb->obstacles.size()+1;
 
 	auto obstacle = std::make_shared<SpellCreatedObstacle>();
-	setupObstacle(obstacle.get());
-
 	obstacle->pos = pos;
 	obstacle->casterSide = parameters.casterSide;
 	obstacle->ID = owner->id;
 	obstacle->spellLevel = parameters.effectLevel;
 	obstacle->casterSpellPower = parameters.effectPower;
 	obstacle->uniqueID = obstacleIdToGive;
+
+	setupObstacle(obstacle.get());
 
 	BattleObstaclePlaced bop;
 	bop.obstacle = obstacle;
@@ -696,6 +696,7 @@ void ForceFieldMechanics::setupObstacle(SpellCreatedObstacle * obstacle) const
 	obstacle->obstacleType = CObstacleInstance::FORCE_FIELD;
 	obstacle->turnsRemaining = 2;
 	obstacle->visibleForAnotherSide = true;
+	obstacle->customSize = rangeInHexes(obstacle->pos, obstacle->spellLevel, obstacle->casterSide);
 }
 
 ///RemoveObstacleMechanics
