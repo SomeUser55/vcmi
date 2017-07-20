@@ -20,6 +20,7 @@
 class CGObjectInstance;
 class CSpell;
 class ISpellMechanics;
+class ISpellMechanicsFactory;
 class IAdventureSpellMechanics;
 class CLegacyConfigParser;
 class CGHeroInstance;
@@ -214,7 +215,7 @@ public:
 	CSpell();
 	~CSpell();
 
-	std::vector<BattleHex> rangeInHexes(BattleHex centralHex, ui8 schoolLvl, ui8 side, bool * outDroppedHexes = nullptr ) const; //convert range to specific hexes; last optional out parameter is set to true, if spell would cover unavailable hexes (that are not included in ret)
+	std::vector<BattleHex> rangeInHexes(BattleHex centralHex, ui8 schoolLvl, ui8 side, bool * outDroppedHexes = nullptr) const; //convert range to specific hexes; last optional out parameter is set to true, if spell would cover unavailable hexes (that are not included in ret)
 	ETargetType getTargetType() const; //deprecated
 
 	bool isCombatSpell() const;
@@ -281,7 +282,7 @@ public:
 		h & animationInfo;
 
 		if(!h.saving)
-			setup();
+			setupMechanics();
 		//backward compatibility
 		//can not be added to level structure as level structure does not know spell id
 		if(!h.saving && version < 773)
@@ -301,7 +302,7 @@ public:
 	ESpellCastProblem::ESpellCastProblem canBeCastAt(const CBattleInfoCallback * cb,  ECastingMode::ECastingMode mode, const ISpellCaster * caster, BattleHex destination) const;
 
 	///checks for creature immunity / anything that prevent casting *at given target* - doesn't take into account general problems such as not having spellbook or mana points etc.
-	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const;
+	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const CBattleInfoCallback * cb, const ISpellCaster * caster, const CStack * obj) const;
 public:
 	///Server logic. Has write access to GameState via packets.
 	///May be executed on client side by (future) non-cheat-proof scripts.
@@ -328,8 +329,9 @@ private:
 	void setIsRising(const bool val);
 
 	//call this after load or deserialization. cant be done in constructor.
-	void setup();
 	void setupMechanics();
+
+	std::unique_ptr<ISpellMechanics> battleMechanics(const CBattleInfoCallback * cb) const;
 private:
 	si32 defaultProbability;
 
@@ -359,7 +361,7 @@ private:
 
 	std::vector<LevelInfo> levels;
 
-	std::unique_ptr<ISpellMechanics> mechanics;//(!) do not serialize
+	std::unique_ptr<ISpellMechanicsFactory> mechanics;//(!) do not serialize
 	std::unique_ptr<IAdventureSpellMechanics> adventureMechanics;//(!) do not serialize
 };
 

@@ -115,7 +115,7 @@ CSpell::~CSpell()
 
 void CSpell::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
 {
-	mechanics->applyBattle(battle, packet);
+	battleMechanics(battle)->applyBattle(battle, packet);
 }
 
 bool CSpell::adventureCast(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const
@@ -130,10 +130,10 @@ bool CSpell::adventureCast(const SpellCastEnvironment * env, const AdventureSpel
 	return adventureMechanics->adventureCast(env, parameters);
 }
 
-void CSpell::battleCast(const SpellCastEnvironment * env,  const BattleSpellCastParameters & parameters) const
+void CSpell::battleCast(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters) const
 {
 	assert(env);
-	mechanics->battleCast(env, parameters);
+	battleMechanics(parameters.cb)->battleCast(env, parameters);
 }
 
 const CSpell::LevelInfo & CSpell::getLevelInfo(const int level) const
@@ -157,6 +157,7 @@ ui32 CSpell::calculateDamage(const ISpellCaster * caster, const CStack * affecte
 
 ESpellCastProblem::ESpellCastProblem CSpell::canBeCast(const CBattleInfoCallback * cb, ECastingMode::ECastingMode mode, const ISpellCaster * caster) const
 {
+	auto mechanics = battleMechanics(cb);
 	ESpellCastProblem::ESpellCastProblem genProblem = cb->battleCanCastSpell(caster, mode);
 	if(genProblem != ESpellCastProblem::OK)
 		return genProblem;
@@ -197,7 +198,7 @@ ESpellCastProblem::ESpellCastProblem CSpell::canBeCast(const CBattleInfoCallback
 	if(cb->battleMaxSpellLevel(side.get()) < level)
 		return ESpellCastProblem::SPELL_LEVEL_LIMIT_EXCEEDED;
 
-	const ESpellCastProblem::ESpellCastProblem specificProblem = mechanics->canBeCast(cb, mode, caster);
+	const ESpellCastProblem::ESpellCastProblem specificProblem = mechanics->canBeCast(mode, caster);
 
 	if(specificProblem != ESpellCastProblem::OK)
 		return specificProblem;
@@ -219,7 +220,7 @@ ESpellCastProblem::ESpellCastProblem CSpell::canBeCast(const CBattleInfoCallback
 
 				for(const CStack * stack : cb->battleGetAllStacks())
 				{
-					const bool immune = !(stack->isValidTarget(!tinfo.onlyAlive) && ESpellCastProblem::OK == isImmuneByStack(caster, stack));
+					const bool immune = !(stack->isValidTarget(!tinfo.onlyAlive) && ESpellCastProblem::OK == isImmuneByStack(cb, caster, stack));
 					const bool ownerMatches = cb->battleMatchOwner(caster->getOwner(), stack, getPositiveness());
 					targetExists = !immune && ownerMatches;
 					if(targetExists)
@@ -238,12 +239,13 @@ ESpellCastProblem::ESpellCastProblem CSpell::canBeCast(const CBattleInfoCallback
 
 std::vector<BattleHex> CSpell::rangeInHexes(BattleHex centralHex, ui8 schoolLvl, ui8 side, bool *outDroppedHexes) const
 {
-	return mechanics->rangeInHexes(centralHex,schoolLvl,side,outDroppedHexes);
+	//FIXME: CBattleInfoCallback parameter for rangeInHexes
+	return battleMechanics(nullptr)->rangeInHexes(centralHex,schoolLvl,side,outDroppedHexes);
 }
 
 std::vector<const CStack *> CSpell::getAffectedStacks(const CBattleInfoCallback * cb, ECastingMode::ECastingMode mode, const ISpellCaster * caster, int spellLvl, BattleHex destination) const
 {
-	return mechanics->getAffectedStacks(cb, mode, caster, spellLvl, destination);
+	return battleMechanics(cb)->getAffectedStacks(mode, caster, spellLvl, destination);
 }
 
 CSpell::ETargetType CSpell::getTargetType() const
@@ -404,7 +406,7 @@ ESpellCastProblem::ESpellCastProblem CSpell::canBeCastAt(const CBattleInfoCallba
 	if(problem != ESpellCastProblem::OK)
 		return problem;
 
-	return mechanics->canBeCastAt(cb, mode, caster, destination);
+	return battleMechanics(cb)->canBeCastAt(mode, caster, destination);
 }
 
 int CSpell::adjustRawDamage(const ISpellCaster * caster, const CStack * affectedCreature, int rawDamage) const
@@ -558,9 +560,9 @@ ESpellCastProblem::ESpellCastProblem CSpell::internalIsImmune(const ISpellCaster
 	return ESpellCastProblem::NOT_DECIDED;
 }
 
-ESpellCastProblem::ESpellCastProblem CSpell::isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const
+ESpellCastProblem::ESpellCastProblem CSpell::isImmuneByStack(const CBattleInfoCallback * cb, const ISpellCaster * caster, const CStack * obj) const
 {
-	const auto immuneResult = mechanics->isImmuneByStack(caster,obj);
+	const auto immuneResult = battleMechanics(cb)->isImmuneByStack(caster,obj);
 
 	if (ESpellCastProblem::NOT_DECIDED != immuneResult)
 		return immuneResult;
@@ -588,15 +590,15 @@ void CSpell::setIsRising(const bool val)
 	}
 }
 
-void CSpell::setup()
-{
-	setupMechanics();
-}
-
 void CSpell::setupMechanics()
 {
-	mechanics = ISpellMechanics::createMechanics(this);
+	mechanics = ISpellMechanicsFactory::get(this);
 	adventureMechanics = IAdventureSpellMechanics::createMechanics(this);
+}
+
+std::unique_ptr<ISpellMechanics> CSpell::battleMechanics(const CBattleInfoCallback * cb) const
+{
+	return mechanics->create(cb);
 }
 
 ///CSpell::AnimationInfo
@@ -1046,7 +1048,7 @@ CSpell * CSpellHandler::loadFromJson(const JsonNode & json, const std::string & 
 void CSpellHandler::afterLoadFinalization()
 {
 	//FIXME: it is a bad place for this code, should refactor loadFromJson to know object id during loading
-	for(auto spell: objects)
+	for(auto spell : objects)
 	{
 		for(auto & level: spell->levels)
 		{
@@ -1055,7 +1057,7 @@ void CSpellHandler::afterLoadFinalization()
 			for(auto & bonus: level.cumulativeEffects)
 				bonus->sid = spell->id;
 		}
-		spell->setup();
+		spell->setupMechanics();
 	}
 }
 

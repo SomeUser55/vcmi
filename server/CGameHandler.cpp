@@ -4640,7 +4640,7 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 			effect = 82;
 			const CSpell * sp = SpellID(SpellID::LAND_MINE).toSpell();
 
-			if(sp->isImmuneByStack(hero, curStack))
+			if(sp->isImmuneByStack(gs->curB, hero, curStack))
 				continue;
 
 			damage = sp->calculateDamage(hero, curStack, spellObstacle->spellLevel, spellObstacle->casterSpellPower);
@@ -4653,7 +4653,7 @@ bool CGameHandler::handleDamageFromObstacle(const CStack * curStack, bool stackI
 				COMPLAIN_RET("Invalid obstacle instance");
 			const CSpell * sp = SpellID(SpellID::FIRE_WALL).toSpell();
 
-			if(sp->isImmuneByStack(hero, curStack))
+			if(sp->isImmuneByStack(gs->curB, hero, curStack))
 				continue;
 
 			damage = sp->calculateDamage(hero, curStack,

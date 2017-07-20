@@ -14,6 +14,7 @@
 #include "../battle/BattleHex.h"
 
 struct Query;
+class ISpellMechanics;
 
 ///callback to be provided by server
 class DLL_LINKAGE SpellCastEnvironment
@@ -93,18 +94,32 @@ private:
 	int effectValue;
 };
 
+class DLL_LINKAGE ISpellMechanicsFactory
+{
+public:
+	ISpellMechanicsFactory(const CSpell * s);
+	virtual ~ISpellMechanicsFactory();
+
+	virtual std::unique_ptr<ISpellMechanics> create(const CBattleInfoCallback * cb) const = 0;
+
+	static std::unique_ptr<ISpellMechanicsFactory> get(const CSpell * s);
+
+protected:
+	const CSpell * spell;
+};
+
 class DLL_LINKAGE ISpellMechanics
 {
 public:
-	ISpellMechanics(const CSpell * s);
+	ISpellMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
 	virtual ~ISpellMechanics(){};
 
 	virtual std::vector<BattleHex> rangeInHexes(BattleHex centralHex, ui8 schoolLvl, ui8 side, bool * outDroppedHexes = nullptr) const = 0;
-	virtual std::vector<const CStack *> getAffectedStacks(const CBattleInfoCallback * cb, const ECastingMode::ECastingMode mode, const ISpellCaster * caster, int spellLvl, BattleHex destination) const = 0;
+	virtual std::vector<const CStack *> getAffectedStacks(const ECastingMode::ECastingMode mode, const ISpellCaster * caster, int spellLvl, BattleHex destination) const = 0;
 
-	virtual ESpellCastProblem::ESpellCastProblem canBeCast(const CBattleInfoCallback * cb, const ECastingMode::ECastingMode mode, const ISpellCaster * caster) const = 0;
+	virtual ESpellCastProblem::ESpellCastProblem canBeCast(const ECastingMode::ECastingMode mode, const ISpellCaster * caster) const = 0;
 
-	virtual ESpellCastProblem::ESpellCastProblem canBeCastAt(const CBattleInfoCallback * cb, const ECastingMode::ECastingMode mode, const ISpellCaster * caster, BattleHex destination) const = 0;
+	virtual ESpellCastProblem::ESpellCastProblem canBeCastAt(const ECastingMode::ECastingMode mode, const ISpellCaster * caster, BattleHex destination) const = 0;
 
 	virtual ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const = 0;
 
@@ -114,9 +129,9 @@ public:
 	//if true use generic algorithm for target existence check, see CSpell::canBeCast
 	virtual bool requiresCreatureTarget() const = 0;
 
-	static std::unique_ptr<ISpellMechanics> createMechanics(const CSpell * s);
 protected:
 	const CSpell * owner;
+	const CBattleInfoCallback * cb;
 };
 
 struct DLL_LINKAGE AdventureSpellCastParameters

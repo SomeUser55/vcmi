@@ -16,7 +16,7 @@
 class DLL_LINKAGE AcidBreathDamageMechanics : public DefaultSpellMechanics
 {
 public:
-	AcidBreathDamageMechanics(const CSpell * s);
+	AcidBreathDamageMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
 	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const override;
 protected:
 	void applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const override;
@@ -25,7 +25,7 @@ protected:
 class DLL_LINKAGE DeathStareMechanics : public DefaultSpellMechanics
 {
 public:
-	DeathStareMechanics(const CSpell * s);
+	DeathStareMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
 protected:
 	void applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const override;
 };
@@ -33,7 +33,7 @@ protected:
 class DLL_LINKAGE DispellHelpfulMechanics : public DefaultSpellMechanics
 {
 public:
-	DispellHelpfulMechanics(const CSpell * s);
+	DispellHelpfulMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
 	void applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const override final;
 	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const override;
 private:

@@ -22,6 +22,36 @@
 #include "BattleSpellMechanics.h"
 #include "CreatureSpellMechanics.h"
 
+template<typename Mechanics>
+class SpellMechanicsFactory : public ISpellMechanicsFactory
+{
+public:
+	SpellMechanicsFactory(const CSpell * s)
+		: ISpellMechanicsFactory(s)
+	{}
+
+	std::unique_ptr<ISpellMechanics> create(const CBattleInfoCallback * cb) const override
+	{
+		return make_unique<Mechanics>(spell, cb);
+	}
+};
+
+template<>
+class SpellMechanicsFactory<SummonMechanics> : public ISpellMechanicsFactory
+{
+public:
+	SpellMechanicsFactory(const CSpell * s, CreatureID c)
+		: ISpellMechanicsFactory(s), cre(c)
+	{}
+
+	std::unique_ptr<ISpellMechanics> create(const CBattleInfoCallback * cb) const override
+	{
+		return make_unique<SummonMechanics>(spell, cb, cre);
+	}
+private:
+	CreatureID cre;
+};
+
 BattleSpellCastParameters::Destination::Destination(const CStack * destination):
 	stackValue(destination),
 	hexValue(destination->position)
@@ -112,69 +142,82 @@ int BattleSpellCastParameters::getEffectValue() const
 	return (effectValue == 0) ? spell->calculateRawEffectValue(effectLevel, effectPower) : effectValue;
 }
 
-///ISpellMechanics
-ISpellMechanics::ISpellMechanics(const CSpell * s):
-	owner(s)
+///ISpellMechanicsFactory
+ISpellMechanicsFactory::ISpellMechanicsFactory(const CSpell * s)
+	: spell(s)
 {
+
 }
 
-std::unique_ptr<ISpellMechanics> ISpellMechanics::createMechanics(const CSpell * s)
+ISpellMechanicsFactory::~ISpellMechanicsFactory()
+{
+
+}
+
+std::unique_ptr<ISpellMechanicsFactory> ISpellMechanicsFactory::get(const CSpell * s)
 {
 	switch (s->id)
 	{
 	case SpellID::ANTI_MAGIC:
-		return make_unique<AntimagicMechanics>(s);
+		return make_unique<SpellMechanicsFactory<AntimagicMechanics>>(s);
 	case SpellID::ACID_BREATH_DAMAGE:
-		return make_unique<AcidBreathDamageMechanics>(s);
+		return make_unique<SpellMechanicsFactory<AcidBreathDamageMechanics>>(s);
 	case SpellID::CHAIN_LIGHTNING:
-		return make_unique<ChainLightningMechanics>(s);
+		return make_unique<SpellMechanicsFactory<ChainLightningMechanics>>(s);
 	case SpellID::CLONE:
-		return make_unique<CloneMechanics>(s);
+		return make_unique<SpellMechanicsFactory<CloneMechanics>>(s);
 	case SpellID::CURE:
-		return make_unique<CureMechanics>(s);
+		return make_unique<SpellMechanicsFactory<CureMechanics>>(s);
 	case SpellID::DEATH_STARE:
-		return make_unique<DeathStareMechanics>(s);
+		return make_unique<SpellMechanicsFactory<DeathStareMechanics>>(s);
 	case SpellID::DISPEL:
-		return make_unique<DispellMechanics>(s);
+		return make_unique<SpellMechanicsFactory<DispellMechanics>>(s);
 	case SpellID::DISPEL_HELPFUL_SPELLS:
-		return make_unique<DispellHelpfulMechanics>(s);
+		return make_unique<SpellMechanicsFactory<DispellHelpfulMechanics>>(s);
 	case SpellID::EARTHQUAKE:
-		return make_unique<EarthquakeMechanics>(s);
+		return make_unique<SpellMechanicsFactory<EarthquakeMechanics>>(s);
 	case SpellID::FIRE_WALL:
-		return make_unique<FireWallMechanics>(s);
+		return make_unique<SpellMechanicsFactory<FireWallMechanics>>(s);
 	case SpellID::FORCE_FIELD:
-		return make_unique<ForceFieldMechanics>(s);
+		return make_unique<SpellMechanicsFactory<ForceFieldMechanics>>(s);
 	case SpellID::HYPNOTIZE:
-		return make_unique<HypnotizeMechanics>(s);
+		return make_unique<SpellMechanicsFactory<HypnotizeMechanics>>(s);
 	case SpellID::LAND_MINE:
-		return make_unique<LandMineMechanics>(s);
+		return make_unique<SpellMechanicsFactory<LandMineMechanics>>(s);
 	case SpellID::QUICKSAND:
-		return make_unique<QuicksandMechanics>(s);
+		return make_unique<SpellMechanicsFactory<QuicksandMechanics>>(s);
 	case SpellID::REMOVE_OBSTACLE:
-		return make_unique<RemoveObstacleMechanics>(s);
+		return make_unique<SpellMechanicsFactory<RemoveObstacleMechanics>>(s);
 	case SpellID::SACRIFICE:
-		return make_unique<SacrificeMechanics>(s);
+		return make_unique<SpellMechanicsFactory<SacrificeMechanics>>(s);
 	case SpellID::SUMMON_FIRE_ELEMENTAL:
-		return make_unique<SummonMechanics>(s, CreatureID::FIRE_ELEMENTAL);
+		return make_unique<SpellMechanicsFactory<SummonMechanics>>(s, CreatureID::FIRE_ELEMENTAL);
 	case SpellID::SUMMON_EARTH_ELEMENTAL:
-		return make_unique<SummonMechanics>(s, CreatureID::EARTH_ELEMENTAL);
+		return make_unique<SpellMechanicsFactory<SummonMechanics>>(s, CreatureID::EARTH_ELEMENTAL);
 	case SpellID::SUMMON_WATER_ELEMENTAL:
-		return make_unique<SummonMechanics>(s, CreatureID::WATER_ELEMENTAL);
+		return make_unique<SpellMechanicsFactory<SummonMechanics>>(s, CreatureID::WATER_ELEMENTAL);
 	case SpellID::SUMMON_AIR_ELEMENTAL:
-		return make_unique<SummonMechanics>(s, CreatureID::AIR_ELEMENTAL);
+		return make_unique<SpellMechanicsFactory<SummonMechanics>>(s, CreatureID::AIR_ELEMENTAL);
 	case SpellID::TELEPORT:
-		return make_unique<TeleportMechanics>(s);
+		return make_unique<SpellMechanicsFactory<TeleportMechanics>>(s);
 	default:
 		if(s->isRisingSpell())
-			return make_unique<SpecialRisingSpellMechanics>(s);
+			return make_unique<SpellMechanicsFactory<SpecialRisingSpellMechanics>>(s);
 		else
-			return make_unique<DefaultSpellMechanics>(s);
+			return make_unique<SpellMechanicsFactory<DefaultSpellMechanics>>(s);
 	}
 }
 
-//IAdventureSpellMechanics
-IAdventureSpellMechanics::IAdventureSpellMechanics(const CSpell * s):
-	owner(s)
+
+///ISpellMechanics
+ISpellMechanics::ISpellMechanics(const CSpell * s, const CBattleInfoCallback * Cb)
+	: owner(s), cb(Cb)
+{
+}
+
+///IAdventureSpellMechanics
+IAdventureSpellMechanics::IAdventureSpellMechanics(const CSpell * s)
+	: owner(s)
 {
 }
 
