@@ -209,9 +209,7 @@ void SpellCastContext::beforeCast()
 void SpellCastContext::afterCast()
 {
 	for(auto sta : attackedCres)
-	{
 		sc.affectedCres.insert(sta->ID);
-	}
 
 	prepareBattleLog();
 
@@ -258,31 +256,6 @@ DefaultSpellMechanics::DefaultSpellMechanics(const CSpell * s, const CBattleInfo
 	: ISpellMechanics(s, Cb)
 {
 };
-
-void DefaultSpellMechanics::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
-{
-	if (packet->castByHero)
-	{
-		if (packet->side < 2)
-		{
-			battle->sides[packet->side].castSpellsCount++;
-		}
-	}
-
-	//handle countering spells
-	for(auto stackID : packet->affectedCres)
-	{
-		CStack * s = battle->getStack(stackID);
-		s->popBonuses([&](const Bonus * b) -> bool
-		{
-			//check for each bonus if it should be removed
-			const bool isSpellEffect = Selector::sourceType(Bonus::SPELL_EFFECT)(b);
-			const int spellID = isSpellEffect ? b->sid : -1;
-			//No exceptions, ANY spell can be countered, even if it can`t be dispelled.
-			return isSpellEffect && vstd::contains(owner->counteredSpells, spellID);
-		});
-	}
-}
 
 void DefaultSpellMechanics::battleCast(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters) const
 {
@@ -338,6 +311,8 @@ void DefaultSpellMechanics::cast(const SpellCastEnvironment * env, const BattleS
 		handleMagicMirror(env, ctx, reflected);
 
 	applyBattleEffects(env, parameters, ctx);
+
+	handleCounteringSpells(env, ctx); //todo: should this be before applyBattleEffects?
 
 	ctx.afterCast();
 }
@@ -757,6 +732,20 @@ ESpellCastProblem::ESpellCastProblem DefaultSpellMechanics::isImmuneByStack(cons
 	return owner->internalIsImmune(caster, obj);
 }
 
+bool DefaultSpellMechanics::counteringSelector(const Bonus * bonus) const
+{
+	if(bonus->source != Bonus::SPELL_EFFECT)
+		return false;
+
+	for(const SpellID & id : owner->counteredSpells)
+	{
+		if(bonus->sid == id.toEnum())
+			return true;
+	}
+
+	return false;
+}
+
 bool DefaultSpellMechanics::dispellSelector(const Bonus * bonus)
 {
 	if(bonus->source == Bonus::SPELL_EFFECT)
@@ -780,18 +769,39 @@ bool DefaultSpellMechanics::dispellSelector(const Bonus * bonus)
 	return false;
 }
 
-void DefaultSpellMechanics::doDispell(BattleInfo * battle, const BattleSpellCast * packet, const CSelector & selector) const
+void DefaultSpellMechanics::doDispell(const SpellCastEnvironment * env, SpellCastContext & ctx, const CSelector & selector) const
 {
-	for(auto stackID : packet->affectedCres)
-	{
-		CStack *s = battle->getStack(stackID);
-		s->popBonuses(selector.And(dispellSelector));
-	}
+	doRemoveEffects(env, ctx, selector.And(dispellSelector));
 }
 
 bool DefaultSpellMechanics::canDispell(const IBonusBearer * obj, const CSelector & selector, const std::string & cachingStr) const
 {
 	return obj->hasBonus(selector.And(dispellSelector), Selector::all, cachingStr);
+}
+
+void DefaultSpellMechanics::doRemoveEffects(const SpellCastEnvironment * env, SpellCastContext & ctx, const CSelector & selector) const
+{
+	SetStackEffect sse;
+
+	for(const CStack * s : ctx.attackedCres)
+	{
+		std::vector<Bonus> buffer;
+		auto bl = s->getBonuses(selector);
+
+		for(auto item : *bl)
+			buffer.emplace_back(*item);
+
+		if(!buffer.empty())
+			sse.toRemove.push_back(std::make_pair(s->ID, buffer));
+	}
+
+	if(!sse.toRemove.empty())
+		env->sendAndApply(&sse);
+}
+
+void DefaultSpellMechanics::handleCounteringSpells(const SpellCastEnvironment * env, SpellCastContext & ctx) const
+{
+	doRemoveEffects(env, ctx, std::bind(&counteringSelector, this, _1));
 }
 
 void DefaultSpellMechanics::handleMagicMirror(const SpellCastEnvironment * env, SpellCastContext & ctx, std::vector <const CStack*> & reflected) const

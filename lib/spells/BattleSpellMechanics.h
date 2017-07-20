@@ -30,7 +30,8 @@ class DLL_LINKAGE AntimagicMechanics : public DefaultSpellMechanics
 {
 public:
 	AntimagicMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
-	void applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const override final;
+protected:
+	void applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const override;
 };
 
 class DLL_LINKAGE ChainLightningMechanics : public DefaultSpellMechanics
@@ -54,10 +55,11 @@ class DLL_LINKAGE CureMechanics : public HealingSpellMechanics
 {
 public:
 	CureMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
-	void applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const override final;
 	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const override;
 	EHealLevel getHealLevel(int effectLevel) const override final;
 	EHealPower getHealPower(int effectLevel) const override final;
+protected:
+	void applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const override;
 private:
     static bool dispellSelector(const Bonus * b);
 };
@@ -67,7 +69,6 @@ class DLL_LINKAGE DispellMechanics : public DefaultSpellMechanics
 public:
 	DispellMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
 	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const override;
-	void applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const override final;
 protected:
 	void applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const override;
 };

@@ -57,8 +57,6 @@ public:
 
 	ESpellCastProblem::ESpellCastProblem isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const override;
 
-	virtual void applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const override;
-
 	void battleCast(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters) const override final;
 
 	void battleLog(std::vector<MetaString> & logLines, const BattleSpellCastParameters & parameters,
@@ -75,7 +73,8 @@ protected:
 	virtual std::vector<const CStack *> calculateAffectedStacks(const ECastingMode::ECastingMode mode, const ISpellCaster * caster, int spellLvl, BattleHex destination) const;
 
 protected:
-	void doDispell(BattleInfo * battle, const BattleSpellCast * packet, const CSelector & selector) const;
+	void doDispell(const SpellCastEnvironment * env, SpellCastContext & ctx, const CSelector & selector) const;
+
 	bool canDispell(const IBonusBearer * obj, const CSelector & selector, const std::string &cachingStr = "") const;
 
 	void defaultDamageEffect(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const;
@@ -83,9 +82,13 @@ protected:
 private:
 	void cast(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, std::vector <const CStack*> & reflected) const;
 
+	void doRemoveEffects(const SpellCastEnvironment * env, SpellCastContext & ctx, const CSelector & selector) const;
+
+	void handleCounteringSpells(const SpellCastEnvironment * env, SpellCastContext & ctx) const;
 	void handleMagicMirror(const SpellCastEnvironment * env, SpellCastContext & ctx, std::vector <const CStack*> & reflected) const;
 	void handleResistance(const SpellCastEnvironment * env, SpellCastContext & ctx) const;
 
+	bool counteringSelector(const Bonus * bonus) const;
 	static bool dispellSelector(const Bonus * bonus);
 
 	friend class SpellCastContext;

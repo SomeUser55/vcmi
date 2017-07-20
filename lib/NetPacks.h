@@ -1531,11 +1531,14 @@ struct SetStackEffect : public CPackForClient
 	std::vector<Bonus> cumulativeEffects; //bonuses to apply
 	std::vector<std::pair<ui32, Bonus> > cumulativeUniqueBonuses; //bonuses per single stack
 
+	std::vector<std::pair<ui32, std::vector<Bonus>>> toRemove;
+
 	std::vector<MetaString> battleLog;
 	template <typename Handler> void serialize(Handler &h, const int version)
 	{
 		h & stacks & effect & uniqueBonuses;
 		h & cumulativeEffects & cumulativeUniqueBonuses;
+		h & toRemove;
 		h & battleLog;
 	}
 };

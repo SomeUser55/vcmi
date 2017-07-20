@@ -62,11 +62,9 @@ AntimagicMechanics::AntimagicMechanics(const CSpell * s, const CBattleInfoCallba
 {
 }
 
-void AntimagicMechanics::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
+void AntimagicMechanics::applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const
 {
-	DefaultSpellMechanics::applyBattle(battle, packet);
-
-	doDispell(battle, packet, [this](const Bonus *b) -> bool
+	doDispell(env, ctx, [this](const Bonus * b) -> bool
 	{
 		if(b->source == Bonus::SPELL_EFFECT)
 		{
@@ -85,6 +83,8 @@ void AntimagicMechanics::applyBattle(BattleInfo * battle, const BattleSpellCast 
 
 		return false; //not a spell effect
 	});
+
+	DefaultSpellMechanics::applyBattleEffects(env, parameters, ctx);
 }
 
 ///ChainLightningMechanics
@@ -197,10 +197,10 @@ CureMechanics::CureMechanics(const CSpell * s, const CBattleInfoCallback * Cb)
 {
 }
 
-void CureMechanics::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
+void CureMechanics::applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const
 {
-	DefaultSpellMechanics::applyBattle(battle, packet);
-	doDispell(battle, packet, dispellSelector);
+	HealingSpellMechanics::applyBattleEffects(env, parameters, ctx);
+	doDispell(env, ctx, dispellSelector);
 }
 
 EHealLevel CureMechanics::getHealLevel(int effectLevel) const
@@ -238,12 +238,6 @@ DispellMechanics::DispellMechanics(const CSpell * s, const CBattleInfoCallback *
 {
 }
 
-void DispellMechanics::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
-{
-	DefaultSpellMechanics::applyBattle(battle, packet);
-	doDispell(battle, packet, Selector::all);
-}
-
 ESpellCastProblem::ESpellCastProblem DispellMechanics::isImmuneByStack(const ISpellCaster * caster, const CStack * obj) const
 {
 	//just in case
@@ -268,6 +262,8 @@ ESpellCastProblem::ESpellCastProblem DispellMechanics::isImmuneByStack(const ISp
 
 void DispellMechanics::applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const
 {
+	doDispell(env, ctx, Selector::all);
+
 	if(parameters.spellLvl > 2)
 	{
 		//expert DISPELL also removes spell-created obstacles

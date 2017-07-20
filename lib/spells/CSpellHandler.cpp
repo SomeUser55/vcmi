@@ -115,7 +115,13 @@ CSpell::~CSpell()
 
 void CSpell::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
 {
-	battleMechanics(battle)->applyBattle(battle, packet);
+	if(packet->castByHero)
+	{
+		if(packet->side < 2)
+		{
+			battle->sides[packet->side].castSpellsCount++;
+		}
+	}
 }
 
 bool CSpell::adventureCast(const SpellCastEnvironment * env, const AdventureSpellCastParameters & parameters) const

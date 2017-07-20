@@ -1530,6 +1530,8 @@ DLL_LINKAGE void BattleSpellCast::applyGs(CGameState *gs)
 
 	const CSpell * spell = SpellID(id).toSpell();
 
+	assert(spell);
+
 	spell->applyBattle(gs->curB, this);
 }
 
@@ -1557,17 +1559,38 @@ void actualizeEffect(CStack * s, const std::vector<Bonus> & ef)
 
 DLL_LINKAGE void SetStackEffect::applyGs(CGameState *gs)
 {
-	if(effect.empty() && cumulativeEffects.empty())
+	for(auto stackData : toRemove)
 	{
-		logGlobal->errorStream() << "Trying to apply SetStackEffect with no effects";
-		return;
+		CStack * s = gs->curB->getStack(stackData.first);
+		if(!s)
+		{
+			logNetwork->error("Cannot find stack %d", stackData.first);
+			continue;
+		}
+
+		for(const Bonus & bonus : stackData.second)
+		{
+			auto selector = [bonus](const Bonus * b)
+			{
+				//compare everything but turnsRemain, limiter and propagator
+				return bonus.duration == b->duration
+				&& bonus.type == b->type
+				&& bonus.subtype == b->subtype
+				&& bonus.source == b->source
+				&& bonus.val == b->val
+				&& bonus.sid == b->sid
+				&& bonus.valType == b->valType
+				&& bonus.additionalInfo == b->additionalInfo
+				&& bonus.effectRange == b->effectRange
+				&& bonus.description == b->description;
+			};
+			s->popBonuses(selector);
+		}
 	}
 
-	si32 spellid = effect.empty() ? cumulativeEffects.begin()->sid : effect.begin()->sid; //effects' source ID
-
-	auto processEffect = [spellid, this](CStack * sta, const Bonus & effect, bool cumulative)
+	auto processEffect = [this](CStack * sta, const Bonus & effect, bool cumulative)
 	{
-		if(cumulative || !sta->hasBonus(Selector::source(Bonus::SPELL_EFFECT, spellid).And(Selector::typeSubtype(effect.type, effect.subtype))))
+		if(cumulative || !sta->hasBonus(Selector::source(Bonus::SPELL_EFFECT, effect.sid).And(Selector::typeSubtype(effect.type, effect.subtype))))
 		{
 			//no such effect or cumulative - add new
 			logBonus->traceStream() << sta->nodeName() << " receives a new bonus: " << effect.Description();

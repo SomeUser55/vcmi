@@ -95,11 +95,10 @@ DispellHelpfulMechanics::DispellHelpfulMechanics(const CSpell * s, const CBattle
 {
 }
 
-void DispellHelpfulMechanics::applyBattle(BattleInfo * battle, const BattleSpellCast * packet) const
+void DispellHelpfulMechanics::applyBattleEffects(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const
 {
-	DefaultSpellMechanics::applyBattle(battle, packet);
-
-	doDispell(battle, packet, positiveSpellEffects);
+	DefaultSpellMechanics::applyBattleEffects(env, parameters, ctx);
+	doDispell(env, ctx, positiveSpellEffects);
 }
 
 ESpellCastProblem::ESpellCastProblem DispellHelpfulMechanics::isImmuneByStack(const ISpellCaster * caster,  const CStack * obj) const
