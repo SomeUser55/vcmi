@@ -75,7 +75,7 @@ protected:
 protected:
 	void doDispell(const SpellCastEnvironment * env, SpellCastContext & ctx, const CSelector & selector) const;
 
-	bool canDispell(const IBonusBearer * obj, const CSelector & selector, const std::string &cachingStr = "") const;
+	bool canDispell(const IBonusBearer * obj, const CSelector & selector, const std::string & cachingStr = "") const;
 
 	void defaultDamageEffect(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const;
 	void defaultTimedEffect(const SpellCastEnvironment * env, const BattleSpellCastParameters & parameters, SpellCastContext & ctx) const;
@@ -99,8 +99,8 @@ class DLL_LINKAGE SpecialSpellMechanics : public DefaultSpellMechanics
 {
 public:
 	SpecialSpellMechanics(const CSpell * s, const CBattleInfoCallback * Cb);
-
 	ESpellCastProblem::ESpellCastProblem canBeCastAt(const ECastingMode::ECastingMode mode, const ISpellCaster * caster, BattleHex destination) const override;
+
 protected:
 	std::vector<const CStack *> calculateAffectedStacks(const ECastingMode::ECastingMode mode, const ISpellCaster * caster, int spellLvl, BattleHex destination) const override;
 };

@@ -431,7 +431,7 @@ ESpellCastProblem::ESpellCastProblem HypnotizeMechanics::isImmuneByStack(const I
 		//TODO: what with other creatures casting hypnotize, Faerie Dragons style?
 		int64_t subjectHealth = obj->health.available();
 		//apply 'damage' bonus for hypnotize, including hero specialty
-		int64_t maxHealth = caster->getSpellBonus(owner, owner->calculateRawEffectValue(caster->getEffectLevel(owner), caster->getEffectPower(owner)), obj);
+		int64_t maxHealth = caster->getSpellBonus(owner, owner->calculateRawEffectValue(caster->getEffectLevel(owner), caster->getEffectPower(owner), 1), obj);
 		if(subjectHealth > maxHealth)
 			return ESpellCastProblem::STACK_IMMUNE_TO_SPELL;
 	}
@@ -960,7 +960,7 @@ ESpellCastProblem::ESpellCastProblem SpecialRisingSpellMechanics::isImmuneByStac
 	auto getEffectValue = [&]() -> si32
 	{
 		si32 effectValue = caster->getEffectValue(owner);
-		return (effectValue == 0) ? owner->calculateRawEffectValue(caster->getEffectLevel(owner), caster->getEffectPower(owner)) : effectValue;
+		return (effectValue == 0) ? owner->calculateRawEffectValue(caster->getEffectLevel(owner), caster->getEffectPower(owner), 1) : effectValue;
 	};
 
 	if(caster)
@@ -1013,10 +1013,9 @@ void SummonMechanics::applyBattleEffects(const SpellCastEnvironment * env, const
 
 	//TODO stack casting -> probably power will be zero; set the proper number of creatures manually
 	int percentBonus = parameters.casterHero ? parameters.casterHero->valOfBonuses(Bonus::SPECIFIC_SPELL_DAMAGE, owner->id.toEnum()) : 0;
+	//new feature - percentage bonus
+	bsa.amount = owner->calculateRawEffectValue(parameters.spellLvl, 0, parameters.effectPower * (100 + percentBonus) / 100.0);
 
-	bsa.amount = parameters.effectPower
-		* owner->getPower(parameters.spellLvl)
-		* (100 + percentBonus) / 100.0; //new feature - percentage bonus
 	if(bsa.amount)
 		env->sendAndApply(&bsa);
 	else

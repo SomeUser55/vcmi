@@ -17,8 +17,6 @@
 #include "../CGeneralTextHandler.h"
 #include "../filesystem/Filesystem.h"
 
-#include "../JsonNode.h"
-
 #include "../CModHandler.h"
 #include "../StringConstants.h"
 
@@ -147,7 +145,7 @@ ui32 CSpell::calculateDamage(const ISpellCaster * caster, const CStack * affecte
 	//check if spell really does damage - if not, return 0
 	if(!isDamageSpell())
 		return 0;
-	return adjustRawDamage(caster, affectedCreature, calculateRawEffectValue(spellSchoolLevel, usedSpellPower));
+	return adjustRawDamage(caster, affectedCreature, calculateRawEffectValue(spellSchoolLevel, usedSpellPower, 1));
 }
 
 ESpellCastProblem::ESpellCastProblem CSpell::canBeCast(const CBattleInfoCallback * cb, ECastingMode::ECastingMode mode, const ISpellCaster * caster) const
@@ -337,6 +335,11 @@ bool CSpell::hasEffects() const
 	return !levels[0].effects.empty() || !levels[0].cumulativeEffects.empty();
 }
 
+bool CSpell::hasSpecialEffects() const
+{
+	return levels[0].specialEffects.getType() == JsonNode::DATA_STRUCT;
+}
+
 const std::string & CSpell::getIconImmune() const
 {
 	return iconImmune;
@@ -445,9 +448,9 @@ int CSpell::adjustRawDamage(const ISpellCaster * caster, const CStack * affected
 	return ret;
 }
 
-int CSpell::calculateRawEffectValue(int effectLevel, int effectPower) const
+int CSpell::calculateRawEffectValue(int effectLevel, int basePowerMultiplier, int levelPowerMultiplier) const
 {
-	return effectPower * power + getPower(effectLevel);
+	return basePowerMultiplier * power + levelPowerMultiplier * getPower(effectLevel);
 }
 
 ESpellCastProblem::ESpellCastProblem CSpell::internalIsImmune(const ISpellCaster * caster, const CStack *obj) const
@@ -1040,6 +1043,9 @@ CSpell * CSpellHandler::loadFromJson(const JsonNode & json, const std::string & 
 
 			levelObject.cumulativeEffects.push_back(b);
 		}
+
+		if(levelNode["specialEffects"].getType() == JsonNode::DATA_STRUCT && !levelNode["specialEffects"].Struct().empty())
+			levelObject.specialEffects = levelNode["specialEffects"];
 	}
 
 	return spell;

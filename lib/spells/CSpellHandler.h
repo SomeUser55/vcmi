@@ -10,6 +10,7 @@
 
 #pragma once
 #include "Magic.h"
+#include "../JsonNode.h"
 #include "../IHandlerBase.h"
 #include "../ConstTransitivePtr.h"
 #include "../int3.h"
@@ -134,10 +135,12 @@ public:
 		std::vector<std::shared_ptr<Bonus>> effects;
 		std::vector<std::shared_ptr<Bonus>> cumulativeEffects;
 
+		JsonNode specialEffects;
+
 		LevelInfo();
 		~LevelInfo();
 
-		template <typename Handler> void serialize(Handler &h, const int version)
+		template <typename Handler> void serialize(Handler & h, const int version)
 		{
 			h & description & cost & power & AIValue & smartTarget & range;
 
@@ -161,6 +164,9 @@ public:
 			}
 
 			h & clearTarget & clearAffected;
+
+			if(version >= 780)
+				h & specialEffects;
 		}
 	};
 
@@ -170,10 +176,22 @@ public:
 	 * \return Spell level info structure
 	 *
 	 */
-	const CSpell::LevelInfo& getLevelInfo(const int level) const;
+	const CSpell::LevelInfo & getLevelInfo(const int level) const;
 public:
-	enum ETargetType {NO_TARGET, CREATURE, OBSTACLE, LOCATION};
-	enum ESpellPositiveness {NEGATIVE = -1, NEUTRAL = 0, POSITIVE = 1};
+	enum ETargetType
+	{
+		NO_TARGET,
+		CREATURE,
+		OBSTACLE,
+		LOCATION
+	};
+
+	enum ESpellPositiveness
+	{
+		NEGATIVE = -1,
+		NEUTRAL = 0,
+		POSITIVE = 1
+	};
 
 	struct DLL_LINKAGE TargetInfo
 	{
@@ -238,6 +256,7 @@ public:
 	bool hasEffects() const;
 	void getEffects(std::vector<Bonus> & lst, const int level, const bool cumulative, const si32 duration, boost::optional<si32 *> maxDuration = boost::none) const;
 
+	bool hasSpecialEffects() const;
 	///calculate spell damage on stack taking caster`s secondary skills and affectedCreature`s bonuses into account
 	ui32 calculateDamage(const ISpellCaster * caster, const CStack * affectedCreature, int spellSchoolLevel, int usedSpellPower) const;
 
@@ -267,7 +286,7 @@ public:
 
 	const std::string& getCastSound() const;
 
-	template <typename Handler> void serialize(Handler &h, const int version)
+	template <typename Handler> void serialize(Handler & h, const int version)
 	{
 		h & identifier & id & name & level & power
 		  & probabilities  & attributes & combatSpell & creatureAbility & positiveness & counteredSpells;
@@ -314,8 +333,10 @@ public:
 public://internal, for use only by Mechanics classes
 	///applies caster`s secondary skills and affectedCreature`s to raw damage
 	int adjustRawDamage(const ISpellCaster * caster, const CStack * affectedCreature, int rawDamage) const;
+
 	///returns raw damage or healed HP
-	int calculateRawEffectValue(int effectLevel, int effectPower) const;
+	int calculateRawEffectValue(int effectLevel, int basePowerMultiplier, int levelPowerMultiplier) const;
+
 	///generic immunity calculation
 	ESpellCastProblem::ESpellCastProblem internalIsImmune(const ISpellCaster * caster, const CStack *obj) const;
 

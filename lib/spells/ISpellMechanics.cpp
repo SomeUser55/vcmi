@@ -21,6 +21,7 @@
 #include "AdventureSpellMechanics.h"
 #include "BattleSpellMechanics.h"
 #include "CreatureSpellMechanics.h"
+#include "CustomSpellMechanics.h"
 
 template<typename Mechanics>
 class SpellMechanicsFactory : public ISpellMechanicsFactory
@@ -48,8 +49,25 @@ public:
 	{
 		return make_unique<SummonMechanics>(spell, cb, cre);
 	}
+
 private:
 	CreatureID cre;
+};
+
+template<>
+class SpellMechanicsFactory<CustomSpellMechanics> : public ISpellMechanicsFactory
+{
+public:
+	SpellMechanicsFactory(const CSpell * s)
+		: ISpellMechanicsFactory(s)
+	{
+		//TODO: process special effects, cache effect objects
+	}
+
+	std::unique_ptr<ISpellMechanics> create(const CBattleInfoCallback * cb) const override
+	{
+		return make_unique<CustomSpellMechanics>(spell, cb);
+	}
 };
 
 BattleSpellCastParameters::Destination::Destination(const CStack * destination):
@@ -139,7 +157,7 @@ BattleHex BattleSpellCastParameters::getFirstDestinationHex() const
 
 int BattleSpellCastParameters::getEffectValue() const
 {
-	return (effectValue == 0) ? spell->calculateRawEffectValue(effectLevel, effectPower) : effectValue;
+	return (effectValue == 0) ? spell->calculateRawEffectValue(effectLevel, effectPower, 1) : effectValue;
 }
 
 ///ISpellMechanicsFactory
@@ -156,8 +174,15 @@ ISpellMechanicsFactory::~ISpellMechanicsFactory()
 
 std::unique_ptr<ISpellMechanicsFactory> ISpellMechanicsFactory::get(const CSpell * s)
 {
-	switch (s->id)
+	//ignore spell id if there are special effects
+	if(s->hasSpecialEffects())
+		return make_unique<SpellMechanicsFactory<CustomSpellMechanics>>(s);
+
+	switch(s->id)
 	{
+	case SpellID::ANIMATE_DEAD:
+	case SpellID::RESURRECTION:
+		return make_unique<SpellMechanicsFactory<SpecialRisingSpellMechanics>>(s);
 	case SpellID::ANTI_MAGIC:
 		return make_unique<SpellMechanicsFactory<AntimagicMechanics>>(s);
 	case SpellID::ACID_BREATH_DAMAGE:
@@ -201,10 +226,7 @@ std::unique_ptr<ISpellMechanicsFactory> ISpellMechanicsFactory::get(const CSpell
 	case SpellID::TELEPORT:
 		return make_unique<SpellMechanicsFactory<TeleportMechanics>>(s);
 	default:
-		if(s->isRisingSpell())
-			return make_unique<SpellMechanicsFactory<SpecialRisingSpellMechanics>>(s);
-		else
-			return make_unique<SpellMechanicsFactory<DefaultSpellMechanics>>(s);
+		return make_unique<SpellMechanicsFactory<DefaultSpellMechanics>>(s);
 	}
 }
 

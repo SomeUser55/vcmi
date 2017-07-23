@@ -98,6 +98,7 @@ set(lib_SRCS
 		spells/BattleSpellMechanics.cpp
 		spells/CDefaultSpellMechanics.cpp
 		spells/CreatureSpellMechanics.cpp
+                spells/CustomSpellMechanics.cpp
 		spells/CSpellHandler.cpp
 		spells/ISpellMechanics.cpp
 		spells/ViewSpellInt.cpp
