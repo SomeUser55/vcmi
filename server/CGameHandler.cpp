@@ -3909,7 +3909,7 @@ bool CGameHandler::makeBattleAction(BattleAction &ba)
 				break;
 			}
 
-			if (destinationStack && stack && stack->ID == destinationStack->ID) //we should just move, it will be handled by following check
+			if (destinationStack && stack->ID == destinationStack->ID) //we should just move, it will be handled by following check
 			{
 				destinationStack = nullptr;
 			}
@@ -3935,13 +3935,11 @@ bool CGameHandler::makeBattleAction(BattleAction &ba)
 
 			for (int i = 0; i < totalAttacks; ++i)
 			{
-				if (stack &&
-					stack->alive() && //move can cause death, eg. by walking into the moat
-					destinationStack->alive())
+				//move can cause death, eg. by walking into the moat
+				if (stack->alive() && destinationStack->alive())
 				{
 					BattleAttack bat;
 					prepareAttack(bat, stack, destinationStack, (i ? 0 : distance),  ba.additionalInfo); //no distance travelled on second attack
-					//prepareAttack(bat, stack, stackAtEnd, 0, ba.additionalInfo);
 					handleAttackBeforeCasting(&bat); //only before first attack
 					sendAndApply(&bat);
 					handleAfterAttackCasting(bat);
